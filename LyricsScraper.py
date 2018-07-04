@@ -1,37 +1,37 @@
-# A simple script to scrape lyrics from the genius.com based on atrtist name.
+# A simple script to scrape URLs to lyrics from https://genius.com/tags/arabic-rap/all
 
 import re
-import requests
+import io
 import time
-import codecs
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
-mybrowser = webdriver.Chrome("path\to\chromedriver\binary") # Browser and path to Web driver you wish to automate your tests cases.
+mybrowser = webdriver.Firefox(executable_path="../../../../../../usr/bin/geckodriver")
 
-user_input = input("Enter Artist Name = ").replace(" ","+") # User_Input = Artist Name
-base_url = "https://genius.com/search?q="+user_input # Append User_Input to search query
-mybrowser.get(base_url) # Open in browser
+url = "https://genius.com/tags/arabic-rap/all"
+mybrowser.get(url)
 
-t_sec = time.time() + 60*20 # seconds*minutes
-while(time.time()<t_sec): # Reach the bottom of the page as per time for now TODO: Better condition to check end of page.
+html = mybrowser.page_source
+
+t_sec = time.time() + 60*20 # seconds*minutes #for test purposes use the line beneath
+#t_sec = time.time() + 20 #change this time later on to something like the above
+while(time.time()<t_sec):
     mybrowser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    html = mybrowser.page_source
-    soup = BeautifulSoup(html, "html.parser")
     time.sleep(5)
+    html = mybrowser.page_source
+
+soup = BeautifulSoup(html, "html.parser")
 
 pattern = re.compile("[\S]+-lyrics$") # Filter http links that end with "lyrics".
-pattern2 = re.compile("\[(.*?)\]") # Remove unnecessary text from the lyrics such as [Intro], [Chorus] etc..
 
-with codecs.open('lyrics.txt','a','utf-8-sig') as myfile:
+with io.open('list_of_URLs.txt', 'a', encoding='utf8') as myfile:
     for link in soup.find_all('a',href=True):
-            if pattern.match(link['href']):
-                f = requests.get(link['href'])
-                lyricsoup = BeautifulSoup(f.content,"html.parser")
-                #lyrics = lyricsoup.find("lyrics").get_text().replace("\n","") # Each song in one line.
-                lyrics = lyricsoup.find("lyrics").get_text() # Line by Line
-                lyrics = re.sub(pattern2, "", lyrics)
-                myfile.write(lyrics+"\n")
+        if pattern.match(link['href']):
+            myfile.write(str(link['href'])+"\n")
+
 mybrowser.close()
 myfile.close()
+
+
+
